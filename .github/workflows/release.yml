@@ -117,9 +117,11 @@ jobs:
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Install frontend dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       # ─── Resolve the release tag ────────────────────────────────────────
       # When triggered by tag push, github.ref_name is the tag. When
