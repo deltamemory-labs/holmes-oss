@@ -1,0 +1,593 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Cohere-inspired design tokens.
+
+   Principles:
+   - White editorial canvas. Color arrives through imagery, coral taxonomy
+     chips, and a single action blue for links. The UI shell is restrained.
+   - Near-black as the primary brand anchor for pill CTAs and high-contrast
+     text. Deep green / navy reserved for full-width product bands.
+   - Display type: Space Grotesk (CohereText-adjacent). Body: Inter. Mono
+     labels via IBM Plex Mono — used for small uppercase technical tags.
+   - Radii favor 8px cards and 22px media; primary buttons render as 32px
+     pills on most surfaces.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Brand anchor */
+  --color-primary: #17171c;            /* Near-Black Primary — CTA + deep cards */
+  --color-primary-active: #000000;     /* Cohere Black — pressed / nav anchor */
+
+  /* Surface system (white-first) */
+  --color-canvas: #ffffff;             /* dominant page background */
+  --color-canvas-soft: #fafafa;        /* research/editorial backdrop */
+  --color-surface-card: #ffffff;       /* form + card surface */
+  --color-surface-strong: #f2f2f2;     /* hover / soft placeholder */
+  --color-surface-warm: #eeece7;       /* Soft Stone — product card blocks */
+  --color-surface-wash-blue: #f1f5ff;  /* Pale Blue Wash — CTA + banners */
+  --color-surface-wash-green: #edfce9; /* Pale Green Wash — editorial */
+  --color-surface-dark: #17171c;       /* dark product/agent console field */
+  --color-surface-dark-elevated: #1f1f26;
+  --color-surface-deep-green: #003c33; /* full-width product band */
+  --color-surface-navy: #071829;       /* financial/security product band */
+
+  /* Borders */
+  --color-hairline: #d9d9dd;           /* standard list rule */
+  --color-hairline-soft: #f2f2f2;      /* softest containment */
+  --color-hairline-strong: #c4c4c9;    /* emphasis rule */
+
+  /* Text */
+  --color-ink: #17171c;                /* headline + primary label */
+  --color-body: #212121;               /* default copy */
+  --color-body-strong: #17171c;        /* emphasized inline */
+  --color-muted: #75758a;              /* research/ metadata */
+  --color-muted-soft: #93939f;         /* footer / dates */
+  --color-on-primary: #ffffff;         /* over near-black */
+  --color-on-dark: #ffffff;            /* over dark product band */
+  --color-on-dark-soft: #93939f;
+
+  /* Accents (use sparingly — not as broad decorative fills) */
+  --color-accent-coral: #ff7759;       /* taxonomy chips, warm markers */
+  --color-accent-coral-soft: #ffad9b;  /* segmented chip borders */
+  --color-accent-blue: #1863dc;        /* editorial links, pagination */
+  --color-accent-focus: #4c6ee6;       /* keyboard focus ring */
+
+  /* Pale wash tokens — intentionally quiet; used only as section grounds
+     behind abstract imagery or the cited-passage banner. Do not treat as
+     primary fills. The old `gradient-*` names are kept so existing class
+     names degrade gracefully to muted Cohere tones. */
+  --color-gradient-lavender: #ece9f6;
+  --color-gradient-sky: #f1f5ff;
+  --color-gradient-mint: #edfce9;
+  --color-gradient-peach: #ffe7dc;
+  --color-gradient-rose: #ffd9cc;
+
+  /* Semantic */
+  --color-success: #0f7a3a;
+  --color-error: #b30000;              /* Cohere validation red */
+
+  /* Radius scale */
+  --radius-xs: 4px;                    /* thumbnails, small utility */
+  --radius-sm: 8px;                    /* cards, chips, dialogs */
+  --radius-md: 16px;                   /* medium product cards */
+  --radius-lg: 22px;                   /* signature media radius */
+  --radius-xl: 30px;                   /* research/topic filter pills */
+  --radius-pill: 32px;                 /* primary CTA pill */
+  --radius-xxl: 24px;                  /* legacy */
+
+  /* Fonts */
+  --font-display:
+    "Space Grotesk", "Inter", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body:
+    "Inter", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:
+    "IBM Plex Mono", "JetBrains Mono", ui-monospace,
+    "SFMono-Regular", Menlo, monospace;
+}
+
+/* ─── Dark mode overrides ─────────────────────────────────────────────── */
+/*  Cohere stays mostly light. We provide a minimal inversion that retains
+    the editorial character: true-black canvas, hairline rules kept thin,
+    coral/blue accents become slightly brighter to hold over dark ground.  */
+:root.dark {
+  --color-primary: #fafafa;
+  --color-primary-active: #ffffff;
+
+  --color-canvas: #0a0a0e;
+  --color-canvas-soft: #101016;
+  --color-surface-card: #141419;
+  --color-surface-strong: #1f1f26;
+  --color-surface-warm: #17171d;
+  --color-surface-wash-blue: #12192a;
+  --color-surface-wash-green: #101c16;
+  --color-surface-dark: #f5f5f5;
+  --color-surface-dark-elevated: #ffffff;
+
+  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-hairline-soft: rgba(255, 255, 255, 0.04);
+  --color-hairline-strong: rgba(255, 255, 255, 0.18);
+
+  --color-ink: #fafafa;
+  --color-body: #e4e4e7;
+  --color-body-strong: #ffffff;
+  --color-muted: #a1a1aa;
+  --color-muted-soft: #71717a;
+  --color-on-primary: #0a0a0e;
+  --color-on-dark: #0a0a0e;
+  --color-on-dark-soft: #71717a;
+
+  --color-accent-coral: #ff9580;
+  --color-accent-coral-soft: #ff7759;
+  --color-accent-blue: #5a8fff;
+  --color-accent-focus: #8aa3ff;
+
+  --color-gradient-lavender: #1d1b28;
+  --color-gradient-sky: #131a29;
+  --color-gradient-mint: #122018;
+  --color-gradient-peach: #2a1b15;
+  --color-gradient-rose: #2a141b;
+
+  --color-success: #4ade80;
+  --color-error: #f87171;
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-canvas);
+    color: var(--color-body);
+    overflow: hidden;
+    height: 100vh;
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  :root.dark body,
+  :root.dark {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :root.dark .sidebar-logo {
+    filter: invert(1) brightness(2);
+  }
+
+  /* Premium theme transition — colors crossfade smoothly */
+  *,
+  *::before,
+  *::after {
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease, box-shadow 0.4s ease, fill 0.3s ease, stroke 0.3s ease;
+  }
+  /* Opt out elements that need instant transitions (animations, transforms) */
+  [class*="animate-"],
+  [class*="transition-transform"],
+  textarea,
+  input {
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease;
+  }
+
+  #root {
+    height: 100vh;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    font-weight: 400;
+  }
+
+  /* Cohere hierarchy — compact, tight tracking, not airy */
+  h1 { font-size: 60px; line-height: 1.0;  letter-spacing: -1.2px; }
+  h2 { font-size: 40px; line-height: 1.1;  letter-spacing: -0.8px; }
+  h3 { font-size: 28px; line-height: 1.2;  letter-spacing: -0.4px; }
+  h4 { font-size: 20px; line-height: 1.3;  letter-spacing: -0.2px; }
+
+  code, pre {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background-color: var(--color-surface-wash-blue);
+    color: var(--color-ink);
+  }
+}
+
+@layer utilities {
+  /* Uppercase technical label — CohereMono-style marker used on research
+     and product surfaces. Keep tracking wide and size small (14/11px). */
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    font-weight: 400;
+  }
+  .mono-label-sm {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted-soft);
+    font-weight: 400;
+  }
+
+  /* Dark product band — deep green or navy full-width section. */
+  .band-dark-green {
+    background-color: var(--color-surface-deep-green);
+    color: var(--color-on-dark);
+  }
+  .band-navy {
+    background-color: var(--color-surface-navy);
+    color: var(--color-on-dark);
+  }
+  .band-ink {
+    background-color: var(--color-surface-dark);
+    color: var(--color-on-dark);
+  }
+
+  /* Legacy gradient-orb utilities — still referenced in onboarding fallback.
+     Values point at very pale washes so they register as quiet texture
+     rather than saturated decoration. Kept for backwards compatibility. */
+  .gradient-orb-mint {
+    background: radial-gradient(ellipse at 30% 50%, var(--color-gradient-mint) 0%, transparent 70%);
+  }
+  .gradient-orb-peach {
+    background: radial-gradient(ellipse at 70% 30%, var(--color-gradient-peach) 0%, transparent 70%);
+  }
+  .gradient-orb-lavender {
+    background: radial-gradient(ellipse at 50% 60%, var(--color-gradient-lavender) 0%, transparent 70%);
+  }
+  .gradient-orb-sky {
+    background: radial-gradient(ellipse at 40% 40%, var(--color-gradient-sky) 0%, transparent 70%);
+  }
+  .gradient-orb-rose {
+    background: radial-gradient(ellipse at 60% 50%, var(--color-gradient-rose) 0%, transparent 70%);
+  }
+
+  /* Subtle animations */
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  .animate-float {
+    animation: float 8s ease-in-out infinite;
+  }
+  .animate-float-slow {
+    animation: float 12s ease-in-out infinite reverse;
+  }
+  .animate-slide-in-right {
+    animation: slideInRight 0.25s ease-out;
+  }
+
+  /* Custom titlebar drag region */
+  .titlebar-drag {
+    -webkit-app-region: drag;
+  }
+  .titlebar-no-drag {
+    -webkit-app-region: no-drag;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(10px, -10px) scale(1.02); }
+  66% { transform: translate(-5px, 5px) scale(0.98); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Auto-scrolling suggestion marquee ────────────────────────────────
+   Horizontal strip of prompt chips shown on the empty chat state. The
+   track holds two copies of the chip list so the `translateX(-50%)` end
+   of the animation aligns exactly with the start — no visible seam. The
+   container's `mask-image` fades both edges so chips enter/exit softly.
+   Respects `prefers-reduced-motion`. Hovering pauses the scroll so the
+   user can read or click a chip without it sliding away. */
+.suggestions-marquee {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+}
+.suggestions-track {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+  animation: scroll-x 40s linear infinite;
+}
+.suggestions-marquee:hover .suggestions-track {
+  animation-play-state: paused;
+}
+@keyframes scroll-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .suggestions-track { animation: none; }
+}
+
+
+/* ───────────── Markdown prose for assistant messages ──────────────────── */
+.prose-holmes {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--color-body);
+  font-family: var(--font-body);
+}
+.prose-holmes h1, .prose-holmes h2, .prose-holmes h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-ink);
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+  letter-spacing: -0.2px;
+}
+.prose-holmes h1 { font-size: 20px; }
+.prose-holmes h2 { font-size: 17px; }
+.prose-holmes h3 { font-size: 15px; }
+.prose-holmes p { margin-bottom: 0.6em; }
+.prose-holmes ul, .prose-holmes ol {
+  padding-left: 1.4em;
+  margin-bottom: 0.6em;
+}
+.prose-holmes li { margin-bottom: 0.2em; }
+.prose-holmes code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--color-surface-strong);
+  color: var(--color-ink);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.prose-holmes pre {
+  background: var(--color-surface-dark);
+  color: var(--color-on-dark);
+  padding: 14px 18px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.6em 0;
+  font-size: 13px;
+}
+.prose-holmes pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+.prose-holmes blockquote {
+  border-left: 2px solid var(--color-hairline-strong);
+  padding-left: 14px;
+  color: var(--color-muted);
+  margin: 0.6em 0;
+}
+.prose-holmes a {
+  color: var(--color-accent-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.prose-holmes a:hover {
+  color: var(--color-primary-active);
+}
+.prose-holmes table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 13px;
+}
+.prose-holmes th, .prose-holmes td {
+  border: 1px solid var(--color-hairline);
+  padding: 8px 10px;
+  text-align: left;
+}
+.prose-holmes th {
+  background: var(--color-canvas-soft);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.prose-holmes strong { color: var(--color-ink); font-weight: 600; }
+.prose-holmes hr {
+  border: none;
+  border-top: 1px solid var(--color-hairline);
+  margin: 1em 0;
+}
+
+
+/* Citation markers [1], [2] etc — tight mono-numeric pill in action blue.
+   Uses action-blue (#1863dc), matching Cohere's editorial link treatment. */
+.prose-holmes a[href^="#cite-"],
+.prose-holmes .citation-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 5px;
+  margin: 0 1px;
+  font-size: 10px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  background: var(--color-surface-wash-blue);
+  color: var(--color-accent-blue);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  vertical-align: super;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.prose-holmes a[href^="#cite-"]:hover,
+.prose-holmes .citation-marker:hover {
+  background: var(--color-canvas);
+  border-color: var(--color-accent-blue);
+}
+
+
+/* ───────────── DOCX viewer — editorial page styling ─────────────────── */
+/*  Renders rendered Word documents with publishing-system typography. Kept
+    a serif stack (Georgia) so legal documents read like documents, not UI. */
+.docx-prose {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-ink);
+}
+.docx-prose h1,
+.docx-prose h2,
+.docx-prose h3,
+.docx-prose h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-ink);
+  margin-top: 1.4em;
+  margin-bottom: 0.4em;
+  letter-spacing: -0.3px;
+}
+.docx-prose h1 { font-size: 28px; line-height: 1.15; }
+.docx-prose h2 { font-size: 22px; line-height: 1.2; }
+.docx-prose h3 { font-size: 18px; line-height: 1.3; }
+.docx-prose h4 { font-size: 16px; line-height: 1.4; font-weight: 500; }
+.docx-prose p {
+  margin: 0 0 0.8em 0;
+}
+.docx-prose strong { font-weight: 600; color: var(--color-ink); }
+.docx-prose em { font-style: italic; }
+.docx-prose u { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.docx-prose table.docx-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-size: 13px;
+  font-family: var(--font-body);
+}
+.docx-prose table.docx-table td,
+.docx-prose table.docx-table th {
+  border: 1px solid var(--color-hairline);
+  padding: 8px 10px;
+  vertical-align: top;
+}
+.docx-prose table.docx-table tr:first-child td {
+  background: var(--color-canvas-soft);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.docx-prose ins.docx-ins {
+  background: color-mix(in srgb, var(--color-surface-wash-green) 80%, transparent);
+  text-decoration: none;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+.docx-prose del.docx-del {
+  background: color-mix(in srgb, var(--color-gradient-rose) 70%, transparent);
+  text-decoration: line-through;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+.docx-prose mark.docx-highlight {
+  background: color-mix(in srgb, var(--color-surface-wash-blue) 90%, transparent);
+  color: var(--color-ink);
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+
+/* ───────────── PDF viewer (pdf.js) ───────────────────────────────────── */
+.pdf-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0 24px;
+  gap: 16px;
+}
+.pdf-page {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  scroll-margin-top: 12px;
+  max-width: 100%;
+}
+.pdf-page canvas {
+  display: block;
+}
+.pdf-page .textLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 1;
+  line-height: 1;
+  color: transparent;
+  forced-color-adjust: none;
+}
+.pdf-page .textLayer > span,
+.pdf-page .textLayer > br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0 0;
+  transform: scaleX(var(--scale-x, 1)) rotate(var(--rotate, 0deg));
+}
+.pdf-page .textLayer > span::selection {
+  background: color-mix(in srgb, var(--color-accent-blue) 40%, transparent);
+}
+/* Verbatim quote highlight — action blue wash, matching Cohere's link
+   system. Fuzzy (word-bag) matches get coral so users can tell the
+   match is heuristic rather than exact. */
+.pdf-page .textLayer .pdf-highlight {
+  background: color-mix(in srgb, var(--color-accent-blue) 22%, transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent-blue) 60%, transparent);
+}
+.pdf-page .textLayer .pdf-highlight.pdf-highlight-fuzzy {
+  background: color-mix(in srgb, var(--color-accent-coral) 22%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent-coral) 55%, transparent);
+}

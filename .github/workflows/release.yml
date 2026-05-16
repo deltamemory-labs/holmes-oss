@@ -1,0 +1,193 @@
+# Builds signed-ready Tauri installers for macOS (ARM + Intel), Windows, and
+# Linux, and attaches them to a GitHub release.
+#
+# Triggers:
+#   - Push a tag matching v*           → cuts a release named after the tag.
+#   - Manually via workflow_dispatch   → lets you dry-run the pipeline before
+#                                        committing to a tag.
+#
+# Output:
+#   A DRAFT, PRERELEASE release is created. Artifacts from every matrix leg
+#   are uploaded to the same release. Nothing is visible to users until you
+#   flip the draft to published from the GitHub UI.
+#
+# Known limitations (flagged on each release body):
+#   - Builds are UNSIGNED. macOS Gatekeeper and Windows SmartScreen will warn
+#     users on first launch. Wire up signing later (see the Signing block
+#     below).
+#   - The macOS x64 build cross-compiles from the Apple Silicon runner.
+#     If that breaks, switch its `platform` to `macos-13` — that runner is
+#     native x86_64.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.1.0-beta.1). Must not already exist.'
+        required: true
+        type: string
+
+# Write access to repo contents is required for tauri-action to create the
+# release and upload assets.
+permissions:
+  contents: write
+
+# Prevent two release workflows for the same ref from racing each other.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      # Keep going with other platforms if one fails — you usually want the
+      # Linux/Windows artifacts even when macOS code-signing breaks.
+      fail-fast: false
+      matrix:
+        include:
+          # Apple Silicon (M-series). Native build, fast.
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin
+            friendly-name: macOS (Apple Silicon)
+
+          # Intel Mac. Cross-compiled from the ARM runner. If this leg goes
+          # flaky, switch platform to macos-13 (Intel runner) and drop the
+          # `target`/`args` fields.
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin
+            friendly-name: macOS (Intel)
+
+          # Linux. Pinned to 22.04 because WebKitGTK ABI changes across Ubuntu
+          # LTS versions have historically broken Tauri on ubuntu-latest.
+          - platform: ubuntu-22.04
+            target: ''
+            args: ''
+            friendly-name: Linux
+
+          # Windows x64.
+          - platform: windows-latest
+            target: ''
+            args: ''
+            friendly-name: Windows
+
+    runs-on: ${{ matrix.platform }}
+    name: Build · ${{ matrix.friendly-name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ─── System dependencies ────────────────────────────────────────────
+      # macOS and Windows runners ship everything Tauri needs out of the box.
+      # Linux needs WebKitGTK, libappindicator, librsvg, and patchelf (the
+      # last one is used by the AppImage bundler).
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential
+
+      # ─── Toolchains ─────────────────────────────────────────────────────
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Empty string on Linux/Windows is a no-op; on macOS this installs
+          # the cross-compile target for the specific leg.
+          targets: ${{ matrix.target }}
+
+      # Speeds up re-runs by ~5–10 minutes on the Rust side. Scoped to the
+      # src-tauri workspace so we don't poison the cache across unrelated
+      # Rust work.
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies
+        run: bun install
+
+      # ─── Resolve the release tag ────────────────────────────────────────
+      # When triggered by tag push, github.ref_name is the tag. When
+      # triggered manually, it's the branch name — so we read inputs.tag.
+      - name: Resolve release tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ─── Build + upload ─────────────────────────────────────────────────
+      # tauri-action does the heavy lifting:
+      #   1. Runs `beforeBuildCommand` from tauri.conf.json (which is
+      #      `bun run build` here, producing the Vite frontend in ./dist).
+      #   2. Runs `cargo tauri build` with the matrix args.
+      #   3. Creates the GitHub release (draft) if it doesn't exist.
+      #   4. Uploads every artifact under src-tauri/target/**/release/bundle/
+      #      to the release.
+      - name: Build and upload installers
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # ─── Signing block (commented out until certs are provisioned) ──
+          # Uncomment the relevant pair once the matching secret is added in
+          # Settings → Secrets and variables → Actions. Until then, all
+          # builds are unsigned and users will see OS-level warnings.
+          #
+          # macOS signing + notarization:
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          #
+          # Windows signing:
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ steps.tag.outputs.value }}
+          releaseName: 'Holmes ${{ steps.tag.outputs.value }}'
+          releaseBody: |
+            ## Holmes ${{ steps.tag.outputs.value }}
+
+            Public beta release. Expect rough edges — please file issues.
+
+            ### Downloads
+            - **macOS (Apple Silicon, M-series)** — `Holmes_<version>_aarch64.dmg`
+            - **macOS (Intel)** — `Holmes_<version>_x64.dmg`
+            - **Windows (x64)** — `Holmes_<version>_x64-setup.exe` and `Holmes_<version>_x64_en-US.msi`
+            - **Linux (x64)** — `holmes_<version>_amd64.AppImage` and `holmes_<version>_amd64.deb`
+
+            ### ⚠️ Unsigned builds
+            These installers are **not** code-signed yet. You'll see a warning on first launch:
+            - **macOS**: "Holmes can't be opened because Apple cannot check it for malicious software." Right-click the app → Open, or run `xattr -cr /Applications/Holmes.app` from Terminal.
+            - **Windows**: SmartScreen shows "Windows protected your PC." Click **More info** → **Run anyway**.
+            - **Linux**: no OS-level warning; make the AppImage executable with `chmod +x Holmes_*.AppImage`.
+
+            Signed builds will land once Apple Developer + Windows code-signing certificates are in place.
+
+            ### What's new
+            <!-- Replace this block before publishing the release. Pull from CHANGELOG.md once it exists. -->
+            - First public beta.
+          releaseDraft: true
+          prerelease: true
+          args: ${{ matrix.args }}

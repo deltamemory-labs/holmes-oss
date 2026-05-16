@@ -9,6 +9,13 @@ lerna-debug.log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+node_modules/
+dist/
+bun.lock
+src-tauri/target/
+src-tauri/gen/
+/.kiro
+.DS_Store
 
 # Runtime data
 pids
