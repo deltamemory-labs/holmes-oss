@@ -115,13 +115,14 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install frontend dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       # ─── Resolve the release tag ────────────────────────────────────────
       # When triggered by tag push, github.ref_name is the tag. When
@@ -139,7 +140,7 @@ jobs:
       # ─── Build + upload ─────────────────────────────────────────────────
       # tauri-action does the heavy lifting:
       #   1. Runs `beforeBuildCommand` from tauri.conf.json (which is
-      #      `bun run build` here, producing the Vite frontend in ./dist).
+      #      `npm run build` here, producing the Vite frontend in ./dist).
       #   2. Runs `cargo tauri build` with the matrix args.
       #   3. Creates the GitHub release (draft) if it doesn't exist.
       #   4. Uploads every artifact under src-tauri/target/**/release/bundle/
